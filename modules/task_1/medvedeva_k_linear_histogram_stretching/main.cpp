@@ -31,7 +31,7 @@ TEST(Sequential_Operations, getSequentialOperations_can_work_with_big_matrix) {
 TEST(Sequential_Operations, getSequentialOperations_works_correctly_with_square_matrix) {
     std::vector<int> matrix = {1, 3, 2, 5, 15, 7, 1, 0, 9};
     std::vector<int> res = {17, 51, 34, 85, 255, 119, 17, 0, 153};
-    
+   
     ASSERT_EQ(res, getSequentialOperations(matrix, 3, 3));
 }
 

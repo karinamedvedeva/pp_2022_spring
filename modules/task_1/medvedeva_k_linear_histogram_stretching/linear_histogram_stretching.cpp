@@ -20,7 +20,6 @@ std::vector<int> getSequentialOperations(const std::vector<int>& matrix,
     std::vector<int> res(matrix);
     int max_y = 0;
     int min_y = 255;
-    
     for (std::size_t i = 0; i < column_count * row_count; i++) {
         if (matrix[i] > max_y) {
             max_y = matrix[i];
