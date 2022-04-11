@@ -23,11 +23,10 @@ std::vector<int> getSequentialOperations(const std::vector<int>& matrix,
     
     for (std::size_t i = 0; i < column_count * row_count; i++) {
         if (matrix[i] > max_y) {
-        max_y = matrix[i];
-        } else {
-             if (matrix[i] < min_y) {
-                 min_y = matrix[i];
-             }
+            max_y = matrix[i];
+        }
+        if (matrix[i] < min_y) {
+            min_y = matrix[i];
         }
     }
     for (std::size_t i = 0; i < column_count * row_count; i++) {
