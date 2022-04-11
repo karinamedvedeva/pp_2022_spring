@@ -7,7 +7,7 @@ TEST(Generation_Matrix, can_generate_square_matrix) {
 }
 
 TEST(Generation_Matrix, can_generate_arbitrary_matrix) {
-    ASSERT_NO_THROW(getRandomMatrix(10, 15));
+    ASSERT_NO_THROW(getRandomMatrix(11, 15));
 }
 
 TEST(Sequential_Operations, getSequentialOperations_can_work_with_square_matrix) {
