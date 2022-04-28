@@ -29,9 +29,17 @@ class Matrix {
     }
     void generateMatrix(double num);
     std::vector<std::vector<double>> multiplyByMatrix(Matrix matrix);
-    std::vector<std::vector<double>> cannonAlgorithmSeq(Matrix matrix1, Matrix matrix2);
-    std::vector< std::vector<double>> shiftLeft(std::vector<std::vector<double>> *mat, size_t pos, size_t skew);
-    std::vector< std::vector<double>> shiftUp(std::vector<std::vector<double>> *mat, size_t pos, size_t skew);
+    std::vector< std::vector<double>> cannonAlgorithmSeq(Matrix matrix2,
+    std::vector< std::vector<double>> res_matrix, size_t block_size,
+    size_t block_count);
+    void shiftLeft(std::vector< std::vector<double>> *matr, size_t pos,
+    size_t block_count, size_t skew);
+    void shiftUp(std::vector< std::vector<double>> *matr, size_t pos, size_t block_count,
+    size_t skew);
+    void mutiplyByBlock(std::vector< std::vector<double>> block1,
+    std::vector< std::vector<double>> block2,
+    std::vector< std::vector<double>>* res_block,
+    size_t shift_l, size_t shift_r, size_t skew);
 
  private:
     size_t size;

@@ -15,7 +15,6 @@ mymat t(const mymat* a);
 double vecmult(const mymat* a, const mymat* at, int i, int j);
 mymat result(const mymat* a, const mymat* b);
 bool operator==(const mymat& a, const mymat& b);
-mymat randmat(int countv, int counth);
 mymat seqresult(const mymat* a, const mymat* b);
 
 #endif  // MODULES_TASK_3_KURNIKOVA_A_SPARSE_CCS_MULT_SPARSE_CCS_MULT_H_

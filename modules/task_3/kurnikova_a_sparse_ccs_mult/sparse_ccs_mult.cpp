@@ -28,21 +28,12 @@ mymat t(const mymat* a) {
         at.cols[i] = sum;
         sum += tmp;
     }
-    int start, end, it, b, c;
-    double v;
-    for (int i = 0; i < a->counth; i++) {
-        start = a->cols[i];
-        end = a->cols[i + 1];
-        it = i;
-        for (int j = start; j < end; j++) {
-            v = a->num[j];
-            b = a->rows[j];
-            c = at.cols[b + 1];
-            at.num[c] = v;
-            at.rows[c] = it;
-            at.cols[b + 1]++;
+    for (int i = 0; i < a->counth; i++)
+        for (int j = a->cols[i]; j < a->cols[i + 1]; j++) {
+            at.num[at.cols[a->rows[j] + 1]] = a->num[j];
+            at.rows[at.cols[a->rows[j] + 1]] = i;
+            at.cols[a->rows[j] + 1]++;
         }
-    }
     return at;
 }
 
@@ -71,15 +62,13 @@ struct help {
 
     void operator()(const tbb::blocked_range<int>& n) const {
         int emp, c1 = b.counth;
-        double tmp;
         for (int i = n.begin(); i < n.end(); i++) {
             if (i < c1)
                 c1 = i;
             emp = 0;
             for (int j = 0; j < at.counth; j++) {
-                tmp = vecmult(&at, &b, j, i);
-                if (tmp != 0) {
-                    num[i].push_back(tmp);
+                if (vecmult(&at, &b, j, i) != 0) {
+                    num[i].push_back(vecmult(&at, &b, j, i));
                     rows[i].push_back(j);
                     emp++;
                 }
@@ -94,7 +83,7 @@ mymat result(const mymat* a, const mymat* b) {
     mymat at = t(a);
     std::vector<int>* rows = new std::vector<int>[ready.counth];
     std::vector<double>* num = new std::vector<double>[ready.counth];
-    tbb::parallel_for(tbb::blocked_range<int>(0, b->counth, 10),
+    tbb::parallel_for(tbb::blocked_range<int>(0, b->counth, 5),
         help(&at, b, rows, &ready.cols, num));
     int pme = 0;
     for (int i = 0; i < ready.counth; i++) {
@@ -106,7 +95,7 @@ mymat result(const mymat* a, const mymat* b) {
     ready.num.resize(ready.cols.back());
     ready.rows.resize(ready.cols.back());
     int j = 0;
-    for (int i = 0; i < ready.counth; i++) {
+    for (int i = 0; i < ready.counth; i++)
         if (num[i].size() > 0) {
             memcpy(&ready.num[j], &num[i][0],
                 num[i].size() * sizeof(double));
@@ -114,7 +103,6 @@ mymat result(const mymat* a, const mymat* b) {
                 num[i].size() * sizeof(int));
             j += num[i].size();
         }
-    }
     delete[] num;
     delete[] rows;
     return ready;
@@ -125,39 +113,14 @@ bool operator==(const mymat& a, const mymat& b) {
         a.cols == b.cols && a.countv == b.countv;
 }
 
-mymat randmat(int countv, int counth) {
-    int a, b, c;
-    std::vector<int> r;
-    std::mt19937 gen;
-    gen.seed(static_cast<unsigned int>(time(0)));
-    a = gen() % static_cast<int>(sqrt(countv * counth));
-    b = (a / counth == 0) ? 1 : a / counth;
-    mymat d(countv, counth, 0);
-    d.countnz = b * counth;
-    for (int i = 0; i < counth; i++) {
-        for (int j = 0; j < b; j++) {
-            d.num.push_back(gen() % static_cast<int>(countv * counth));
-            c = gen() % static_cast<int>(countv);
-            while (std::find(r.begin(), r.end(), c) != r.end())
-                c = gen() % static_cast<int>(countv);
-            d.rows.push_back(c);
-        }
-        d.cols[i] = i * b;
-    }
-    d.cols[counth] = counth * b;
-    return d;
-}
-
 mymat seqresult(const mymat* a, const mymat* b) {
     mymat ready(a->countv, b->counth, 0);
     mymat at(t(a));
-    double tmp;
     for (int j = 0; j < b->counth; j++) {
         int emp = 0;
         for (int i = 0; i < at.counth; i++) {
-            tmp = vecmult(b, &at, i, j);
-            if (tmp != 0) {
-                ready.num.push_back(tmp);
+            if (vecmult(b, &at, i, j) != 0) {
+                ready.num.push_back(vecmult(b, &at, i, j));
                 ready.rows.push_back(i);
                 emp++;
             }

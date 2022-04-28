@@ -28,21 +28,12 @@ mymat t(const mymat* a) {
         at.cols[i] = sum;
         sum += tmp;
     }
-    int start, end, it, b, c;
-    double v;
-    for (int i = 0; i < a->counth; i++) {
-        start = a->cols[i];
-        end = a->cols[i + 1];
-        it = i;
-        for (int j = start; j < end; j++) {
-            v = a->num[j];
-            b = a->rows[j];
-            c = at.cols[b + 1];
-            at.num[c] = v;
-            at.rows[c] = it;
-            at.cols[b + 1]++;
+    for (int i = 0; i < a->counth; i++)
+        for (int j = a->cols[i]; j < a->cols[i + 1]; j++) {
+            at.num[at.cols[a->rows[j] + 1]] = a->num[j];
+            at.rows[at.cols[a->rows[j] + 1]] = i;
+            at.cols[a->rows[j] + 1]++;
         }
-    }
     return at;
 }
 
@@ -60,10 +51,9 @@ double vecmult(const mymat* a, const mymat* at, int n, int m) {
 mymat result(const mymat* a, const mymat* b) {
     mymat ready(a->countv, b->counth, 0);
     mymat at(t(a));
-#pragma omp parallel if (b->counth > 1) shared(ready, at)
+#pragma omp parallel
     {
         int emp, c1 = b->counth;
-        double tmp;
         std::vector<int> rth;
         std::vector<double> nth;
 #pragma omp for schedule(static)
@@ -71,36 +61,28 @@ mymat result(const mymat* a, const mymat* b) {
             if (i < c1)
                 c1 = i;
             emp = 0;
-            for (int j = 0; j < at.counth; j++) {
-                tmp = vecmult(&at, b, j, i);
-                if (tmp != 0) {
-                    nth.push_back(tmp);
+            for (int j = 0; j < at.counth; j++)
+                if (vecmult(&at, b, j, i) != 0) {
+                    nth.push_back(vecmult(&at, b, j, i));
                     rth.push_back(j);
                     emp++;
                 }
-            }
             ready.cols[i] = emp;
         }
 #pragma omp master
         {
-            int pme = 0, sum = ready.counth;
-            for (int i = 0; i < sum; i++) {
+            int pme = 0;
+            for (int i = 0; i < ready.counth; i++) {
                 int tmp = ready.cols[i];
                 ready.cols[i] = pme;
                 pme += tmp;
             }
-            ready.cols[sum] = pme;
+            ready.cols[ready.counth] = pme;
             ready.num.resize(ready.cols.back());
             ready.rows.resize(ready.cols.back());
         }
 #pragma omp barrier
-        if (omp_get_thread_num() == 0) {
-            std::memcpy(ready.num.data(), nth.data(),
-                nth.size() * sizeof(double));
-            std::memcpy(ready.rows.data(), rth.data(),
-                rth.size() * sizeof(int));
-
-        } else if (nth.size() != 0) {
+        if (nth.size() != 0) {
             std::memcpy(&(ready.num[ready.cols[c1]]),
                 nth.data(), nth.size() * sizeof(double));
             std::memcpy(&(ready.rows[ready.cols[c1]]),
@@ -115,43 +97,17 @@ bool operator==(const mymat& a, const mymat& b) {
         a.cols == b.cols && a.countv == b.countv;
 }
 
-mymat randmat(int countv, int counth) {
-    int a, b, c;
-    std::vector<int> r;
-    std::mt19937 gen;
-    gen.seed(static_cast<unsigned int>(time(0)));
-    a = gen() % static_cast<int>(sqrt(countv * counth));
-    b = (a / counth == 0) ? 1 : a / counth;
-    mymat d(countv, counth, 0);
-    d.countnz = b * counth;
-    for (int i = 0; i < counth; i++) {
-        for (int j = 0; j < b; j++) {
-            d.num.push_back(gen() % static_cast<int>(countv * counth));
-            c = gen() % static_cast<int>(countv);
-            while (std::find(r.begin(), r.end(), c) != r.end())
-                c = gen() % static_cast<int>(countv);
-            d.rows.push_back(c);
-        }
-        d.cols[i] = i * b;
-    }
-    d.cols[counth] = counth * b;
-    return d;
-}
-
 mymat seqresult(const mymat* a, const mymat* b) {
     mymat ready(a->countv, b->counth, 0);
     mymat at(t(a));
-    double tmp;
     for (int j = 0; j < b->counth; j++) {
         int emp = 0;
-        for (int i = 0; i < at.counth; i++) {
-            tmp = vecmult(b, &at, i, j);
-            if (tmp != 0) {
-                ready.num.push_back(tmp);
+        for (int i = 0; i < at.counth; i++)
+            if (vecmult(b, &at, i, j) != 0) {
+                ready.num.push_back(vecmult(b, &at, i, j));
                 ready.rows.push_back(i);
                 emp++;
             }
-        }
         ready.cols[j + 1] = emp + ready.cols[j];
     }
     return ready;

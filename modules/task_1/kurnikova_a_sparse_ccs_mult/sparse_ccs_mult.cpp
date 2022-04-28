@@ -22,21 +22,12 @@ mymat t(const mymat* a) {
         at.cols[i] = sum;
         sum += tmp;
     }
-    int start, end, it, b, c;
-    double v;
-    for (int i = 0; i < a->counth; i++) {
-        start = a->cols[i];
-        end = a->cols[i + 1];
-        it = i;
-        for (int j = start; j < end; j++) {
-            v = a->num[j];
-            b = a->rows[j];
-            c = at.cols[b + 1];
-            at.num[c] = v;
-            at.rows[c] = it;
-            at.cols[b + 1]++;
+    for (int i = 0; i < a->counth; i++)
+        for (int j = a->cols[i]; j < a->cols[i + 1]; j++) {
+            at.num[at.cols[a->rows[j] + 1]] = a->num[j];
+            at.rows[at.cols[a->rows[j] + 1]] = i;
+            at.cols[a->rows[j] + 1]++;
         }
-    }
     return at;
 }
 
@@ -53,18 +44,15 @@ double vecmult(const mymat* a, const mymat* at, int n, int m) {
 
 mymat result(const mymat* a, const mymat* b) {
     mymat ready(a->countv, b->counth, 0);
-    mymat at(t(a));
-    double tmp;
+    mymat at = t(a);
     for (int j = 0; j < b->counth; j++) {
         int emp = 0;
-        for (int i = 0; i < at.counth; i++) {
-            tmp = vecmult(b, &at, i, j);
-            if (tmp != 0) {
-                ready.num.push_back(tmp);
+        for (int i = 0; i < at.counth; i++)
+            if (vecmult(b, &at, i, j) != 0) {
+                ready.num.push_back(vecmult(b, &at, i, j));
                 ready.rows.push_back(i);
                 emp++;
             }
-        }
         ready.cols[j + 1] = emp + ready.cols[j];
     }
     return ready;
